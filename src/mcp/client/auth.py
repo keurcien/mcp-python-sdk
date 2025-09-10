@@ -119,7 +119,7 @@ class OAuthContext:
 
     def update_token_expiry(self, token: OAuthToken) -> None:
         """Update token expiry time."""
-        if token.expires_in:
+        if token.expires_in is not None:
             self.token_expiry_time = time.time() + token.expires_in
         else:
             self.token_expiry_time = None
@@ -464,6 +464,11 @@ class OAuthClientProvider(httpx.Auth):
         """Load stored tokens and client info."""
         self.context.current_tokens = await self.context.storage.get_tokens()
         self.context.client_info = await self.context.storage.get_client_info()
+        
+        # Update the token expiry time right after loading it from storage.
+        if self.context.current_tokens:
+            self.context.update_token_expiry(self.context.current_tokens)
+
         self._initialized = True
 
     def _add_auth_header(self, request: httpx.Request) -> None:
